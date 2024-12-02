@@ -1,159 +1,149 @@
 /*
-
+This program implements a Binary Search Tree (BST) data structure in C++, providing functions for adding, removing, finding, and traversing nodes. 
+It also includes a performance evaluation component that measures the time taken to add varying numbers of random nodes to the BST, allowing for analysis 
+of the data structure's efficiency as it scales. The implementation demonstrates key BST operations and serves as a foundation for comparing its performance 
+characteristics with other data structures.
 */
 
 #include <iostream> // This is a header file library that lets us work with input and output objects, such as cout.
+#include <cassert> // This is a header file library that lets us use the assert function to test our code.
 #include <algorithm> // This is a header file library that lets us work with arrays.
 #include <chrono> // This is a header file library that lets us work with time.
 #include <random> // This is a header file library that lets us work with random numbers.
 #include <vector> // This is a header file library that lets us work with arrays that can change in size.
+#include <iomanip> // This is a header file library that lets us work with parametric manipulators.
+#include <fstream> // This is a header file library that lets us work with files.
+#include <filesystem> // This is a header file library that lets us work with file systems.
+#include "BinarySearchTree.h" // This is a header file that contains the implementation of a binary search tree.
 
 using namespace std; // using standard namespace to avoid writing std:: before standard library functions
 using namespace chrono; // using chrono namespace to avoid writing chrono:: before time measurement functions
 
-class Node { // This class represents a node in a binary search tree
-public: // This means that the members of the class that follow are accessible from outside the class
-	int data; // This is the data stored in the node
-	Node* left; // This is a pointer to the left child of the node
-	Node* right; // This is a pointer to the right child of the node
+void readFromFile(BinarySearchTree& bst, const string& filename) { // This function reads data from a file and inserts it into the binary search tree.
+	ifstream file(filename); // Open the file for reading.
+	string line; // Create a string to store each line of the file.
 
-	Node(int value) : data(value), left(nullptr), right(nullptr) {} // This is a constructor that initializes the node with a value
-};
-
-class BinarySearchTree { // This class represents a binary search tree
-private: // This means that the members of the class that follow are not accessible from outside the class
-	Node* root; // This is a pointer to the root node of the tree
-
-	Node* insertRecursive(Node* node, int value) { // This is a private member function that inserts a value into the tree recursively
-		if (node == nullptr) { // If the node is null
-			return new Node(value); // Create a new node with the value
-        }
-
-		if (value < node->data) { // If the value is less than the data in the node
-			node->left = insertRecursive(node->left, value); // Insert the value into the left subtree
-        }
-		else if (value > node->data) { // If the value is greater than the data in the node
-			node->right = insertRecursive(node->right, value); // Insert the value into the right subtree
-        }
-
-		return node; // Return the node
-    }
-
-	Node* findMinNode(Node* node) { // This is a private member function that finds the node with the minimum value in the tree
-		while (node->left != nullptr) { // While the left child of the node is not null
-			node = node->left; // Move to the left child
-        }
-		return node; // Return the node
-    }
-
-	Node* removeRecursive(Node* node, int value) { // This is a private member function that removes a value from the tree recursively
-		if (node == nullptr) { // If the node is null
-			return nullptr; // Return null
-        }
-
-		if (value < node->data) { // If the value is less than the data in the node
-			node->left = removeRecursive(node->left, value); // Remove the value from the left subtree
-        }
-		else if (value > node->data) { // If the value is greater than the data in the node
-			node->right = removeRecursive(node->right, value); // Remove the value from the right subtree
-        }
-		else { // If the value is equal to the data in the node
-			if (node->left == nullptr) { // If the left child of the node is null
-				Node* temp = node->right; // Store the right child of the node in a temporary variable
-				delete node; // Delete the node
-				return temp; // Return the right child
-            }
-			else if (node->right == nullptr) { // If the right child of the node is null
-				Node* temp = node->left; // Store the left child of the node in a temporary variable
-				delete node; // Delete the node
-				return temp; // Return the left child
-            }
-
-			Node* temp = findMinNode(node->right); // Find the node with the minimum value in the right subtree
-			node->data = temp->data; // Copy the data of the minimum node to the current node
-			node->right = removeRecursive(node->right, temp->data); // Remove the minimum node from the right subtree
-        }
-
-		return node; // Return the node
-    }
-
-	void inorderTraverseRecursive(Node* node) { // This is a private member function that traverses the tree in inorder recursively
-		if (node != nullptr) { // If the node is not null
-			inorderTraverseRecursive(node->left); // Traverse the left subtree
-			cout << node->data << " "; // Print the data in the node
-			inorderTraverseRecursive(node->right); // Traverse the right subtree
-        }
-    }
-
-	Node* findRecursive(Node* node, int value) { // This is a private member function that finds a value in the tree recursively
-		if (node == nullptr || node->data == value) { // If the node is null or the data in the node is equal to the value
-			return node; // Return the node
-        }
-
-		if (value < node->data) { // If the value is less than the data in the node
-			return findRecursive(node->left, value); // Find the value in the left subtree
-        }
-
-		return findRecursive(node->right, value); // Find the value in the right subtree
-    }
-
-public: // This means that the members of the class that follow are accessible from outside the class
-	BinarySearchTree() : root(nullptr) {} // This is a constructor that initializes the tree with a null root
-
-	void add(int value) { // This is a public member function that adds a value to the tree
-		root = insertRecursive(root, value); // Insert the value into the tree recursively
-    }
-
-	void remove(int value) { // This is a public member function that removes a value from the tree
-		root = removeRecursive(root, value); // Remove the value from the tree recursively
-    }
-
-	int maximum() { // This is a public member function that returns the maximum value in the tree
-		if (root == nullptr) { // If the root is null
-			throw runtime_error("BST is empty"); // Throw a runtime error
-        }
-
-		Node* current = root; // Create a pointer to the root node
-		while (current->right != nullptr) { // While the right child of the current node is not null
-			current = current->right; // Move to the right child
-        } 
-		return current->data; // Return the data in the current node
-    }
-
-	void inorderTraverse() { // This is a public member function that traverses the tree in inorder
-		inorderTraverseRecursive(root); // Traverse the tree in inorder recursively
-		cout << endl; // Print a new line
-    }
-
-	bool find(int value) { // This is a public member function that finds a value in the tree
-		return findRecursive(root, value) != nullptr; // Return true if the value is found, false otherwise
-    }
-};
-
-double measureAddPerformance(int numNodes) { // This is a function that measures the performance of adding nodes to a binary search tree
-	BinarySearchTree bst; // Create a binary search tree
-	random_device rd; // Create a random device
-	mt19937 gen(rd()); // Create a Mersenne Twister pseudo-random number generator
-	uniform_int_distribution<> dis(1, 1000000); // Create a uniform distribution from 1 to 1000000
-
-	auto start = high_resolution_clock::now(); // Start the timer
-
-	for (int i = 0; i < numNodes; ++i) { // For each node to add
-		bst.add(dis(gen)); // Add a random number to the tree
-    }
-
-	auto end = high_resolution_clock::now(); // End the timer
-	duration<double> diff = end - start; // Calculate the duration
-	return diff.count(); // Return the duration in seconds
+	if (file.is_open()) { // Check if the file is open.
+		while (getline(file, line)) { // Read each line from the file.
+			bst.insert(line); // Insert the line into the binary search tree.
+		}
+		file.close(); // Close the file.
+		cout << "Data loaded from file successfully.\n"; // Print a message indicating that the data was loaded successfully.
+	}
+	else { // If the file cannot be opened, print an error message.
+		cout << "Unable to open file.\n"; // Print an error message indicating that the file could not be opened.
+	}
 }
 
-int main() { // This is the main function
-	vector<int> nodeCounts = { 100, 1000, 10000, 100000 }; // This is a vector of node counts to measure performance for
 
-	for (int count : nodeCounts) { // For each node count
-		double time = measureAddPerformance(count); // Measure the performance of adding nodes
-		cout << "Time to add " << count << " nodes: " << time << " seconds" << endl; // Print the time to add nodes
+void testRemoveFromEmptyBST() { // This function tests the remove function on an empty binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	assert(bst.remove("5") == false); // Check that removing a node from an empty tree returns false.
+	cout << "Remove from empty BST test passed.\n"; // Print a message indicating that the test passed.
+}
+
+void testInsertDuplicateNode() { // This function tests inserting a duplicate node into the binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	bst.insert("5"); // Insert a node with value 5.
+	bst.insert("5"); // Insert a duplicate node with value 5.
+	assert(bst.exists("5") == true); // Check that the duplicate node was inserted successfully.
+	cout << "Insert duplicate node test passed.\n"; // Print a message indicating that the test passed.
+}
+
+void testRemoveNodeWithNoChildren() { // This function tests removing a node with no children from the binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	bst.insert("5"); // Insert a node with value 5.
+	bst.insert("3"); // Insert a node with value 3.
+	bst.insert("7"); // Insert a node with value 7.
+	assert(bst.remove("3") == true); // Remove the node with value 3.
+	assert(bst.exists("3") == false); // Check that the node with value 3 was removed successfully.
+	cout << "Remove node with no children test passed.\n"; // Print a message indicating that the test passed.
+}
+
+void testRemoveNodeWithOneChild() { // This function tests removing a node with one child from the binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	bst.insert("5"); // Insert a node with value 5.
+	bst.insert("3"); // Insert a node with value 3.
+	bst.insert("7"); // Insert a node with value 7.
+	bst.insert("6"); // Insert a node with value 6.
+	assert(bst.remove("7") == true); // Remove the node with value 7.
+	assert(bst.exists("7") == false); // Check that the node with value 7 was removed successfully.
+	assert(bst.exists("6") == true); // Check that the child node with value 6 still exists.
+	cout << "Remove node with one child test passed.\n"; // Print a message indicating that the test passed.
+}
+
+void testRemoveNodeWithTwoChildren() { // This function tests removing a node with two children from the binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	bst.insert("5"); // Insert a node with value 5.
+	bst.insert("3"); // Insert a node with value 3.
+	bst.insert("7"); // Insert a node with value 7.
+	bst.insert("6"); // Insert a node with value 6.
+	bst.insert("8"); // Insert a node with value 8.
+	assert(bst.remove("7") == true); // Remove the node with value 7.
+	assert(bst.exists("7") == false); // Check that the node with value 7 was removed successfully.
+	assert(bst.exists("6") == true); // Check that the child node with value 6 still exists.
+	assert(bst.exists("8") == true); // Check that the child node with value 8 still exists.
+	cout << "Remove node with two children test passed.\n"; // Print a message indicating that the test passed.
+}
+
+void testVerifyBSTStructure() { // This function tests the structure of the binary search tree to ensure it is correctly implemented.
+	BinarySearchTree bst; // Create a new binary search tree.
+	bst.insert("5"); // Insert a node with value 5.
+	bst.insert("3"); // Insert a node with value 3.
+	bst.insert("7"); // Insert a node with value 7.
+	bst.insert("2"); // Insert a node with value 2.
+	bst.insert("4"); // Insert a node with value 4.
+	bst.insert("6"); // Insert a node with value 6.
+	bst.insert("8"); // Insert a node with value 8.
+
+	cout << "Inorder traversal (should be sorted): " << bst.inorder() << endl; // Print the inorder traversal of the tree.
+}
+
+double measureAddPerformance(int numNodes) { // This function measures the performance of adding nodes to the binary search tree.
+	BinarySearchTree bst; // Create a new binary search tree.
+	random_device rd; // Create a random device to generate random numbers.
+	mt19937 gen(rd()); // Create a random number generator.
+	uniform_int_distribution<> dis(1, 1000000); // Create a uniform distribution for random numbers.
+
+	auto start = high_resolution_clock::now(); // Start measuring time.
+
+	for (int i = 0; i < numNodes; ++i) { // Loop through the specified number of nodes.
+		bst.insert(to_string(dis(gen))); // Insert a random node into the tree.
     }
 
-	return 0; // Return 0 to indicate successful completion
+	auto end = high_resolution_clock::now(); // Stop measuring time.
+	duration<double> diff = end - start; // Calculate the time taken to add the nodes.
+	return diff.count(); // Return the time taken in seconds.
+}
+
+int main() { // This is the main function where the program starts.
+	BinarySearchTree bst; // Create a new binary search tree.
+	readFromFile(bst, "C:/Users/rashe/Downloads/sample_data.txt"); // Read data from a file and insert it into the binary search tree.
+	cout << "Current path is " << filesystem::current_path() << endl; // Print the current path of the program.
+	cout << "Inorder traversal of BST: " << bst.inorder() << endl; // Print the inorder traversal of the binary search tree.
+
+	// Run all test cases
+	testRemoveFromEmptyBST(); // Test removing a node from an empty binary search tree.
+	testInsertDuplicateNode(); // Test inserting a duplicate node into the binary search tree.
+	testRemoveNodeWithNoChildren(); // Test removing a node with no children from the binary search tree.
+	testRemoveNodeWithOneChild(); // Test removing a node with one child from the binary search tree.
+	testRemoveNodeWithTwoChildren(); // Test removing a node with two children from the binary search tree.
+	testVerifyBSTStructure(); // Test the structure of the binary search tree.
+
+    // Measure performance
+	vector<int> nodeCounts = { 100, 1000, 10000, 100000 }; // Define the number of nodes to add for performance measurement.
+	vector<double> times; // Create a vector to store the times taken to add nodes.
+
+	for (int count : nodeCounts) { // Loop through the number of nodes to add.
+		double time = measureAddPerformance(count); // Measure the time taken to add the specified number of nodes.
+		times.push_back(time); // Store the time taken in the vector.
+		cout << "Time to add " << count << " nodes: " << time << " seconds" << endl; // Print the time taken to add the nodes.
+
+		if (times.size() > 1) { // Check if there are at least two time measurements.
+			double ratio = times.back() / times[times.size() - 2]; // Calculate the ratio of the current time to the previous time.
+			cout << "Ratio to previous: " << fixed << setprecision(2) << ratio << "x" << endl; // Print the ratio to the previous time.
+        }
+    }
+
+	return 0; // Return 0 to indicate successful completion of the program.
 }
